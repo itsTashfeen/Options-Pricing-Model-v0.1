@@ -170,7 +170,7 @@ class OptionsPricer:
 
 
 def main():
-    st.title('Enhanced Options Pricing Dashboard')
+    st.title('Option Pricing Dashboard v01')
 
     # Sidebar configuration
     st.sidebar.header('Option Parameters')
