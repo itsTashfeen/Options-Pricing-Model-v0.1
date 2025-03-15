@@ -18,37 +18,46 @@ class VolatilityCalculator:
     def calculate_returns(prices: np.ndarray, log_returns: bool = True) -> np.ndarray:
         """Calculate returns from price series"""
         prices = np.asarray(prices)
+        # Initialize returns array with NaN
+        returns = np.full(len(prices), np.nan)
+        
         if log_returns:
-            returns = np.log(prices[1:] / prices[:-1])
+            returns[1:] = np.log(prices[1:] / prices[:-1])
         else:
-            returns = prices[1:] / prices[:-1] - 1
+            returns[1:] = prices[1:] / prices[:-1] - 1
         return returns
 
     @staticmethod
     def historical_volatility(params: VolatilityParams) -> float:
         """Calculate historical volatility"""
         returns = np.asarray(params.returns)
-        if len(returns) < 2:
+        valid_returns = returns[~np.isnan(returns)]
+        if len(valid_returns) < 2:
             raise ValueError("Need at least 2 returns to calculate volatility")
             
         # Annualization factor (sqrt of trading days)
         annualization = np.sqrt(252)
-        return float(np.std(returns, ddof=1) * annualization)
+        return float(np.std(valid_returns, ddof=1) * annualization)
 
     @staticmethod
     def ewma_volatility(params: VolatilityParams) -> np.ndarray:
         """Calculate EWMA (Exponentially Weighted Moving Average) volatility"""
         returns = np.asarray(params.returns)
-        if len(returns) < params.window:
-            raise ValueError(f"Need at least {params.window} returns for EWMA calculation")
+        valid_returns = returns[~np.isnan(returns)]
+        if len(valid_returns) < 2:
+            raise ValueError("Need at least 2 returns for EWMA calculation")
             
-        # Initialize variance
-        variance = np.zeros_like(returns)
-        variance[0] = returns[0] ** 2
+        # Initialize variance array with NaN
+        variance = np.full(len(returns), np.nan)
+        
+        # Find first valid return index
+        first_valid_idx = np.where(~np.isnan(returns))[0][0]
+        variance[first_valid_idx] = returns[first_valid_idx] ** 2
         
         # Calculate EWMA variance
-        for t in range(1, len(returns)):
-            variance[t] = params.decay * variance[t-1] + (1 - params.decay) * returns[t-1] ** 2
+        for t in range(first_valid_idx + 1, len(returns)):
+            if not np.isnan(returns[t-1]):
+                variance[t] = params.decay * variance[t-1] + (1 - params.decay) * returns[t-1] ** 2
             
         # Convert to volatility and annualize
         volatility = np.sqrt(variance) * np.sqrt(252)
@@ -56,86 +65,84 @@ class VolatilityCalculator:
 
     @staticmethod
     def garch_volatility(params: VolatilityParams, alpha: float = 0.1, beta: float = 0.8) -> np.ndarray:
-        """
-        Calculate GARCH(1,1) volatility
-        
-        Parameters:
-        -----------
-        params : VolatilityParams
-            Volatility parameters
-        alpha : float
-            ARCH parameter
-        beta : float
-            GARCH parameter
-        """
+        """Calculate GARCH(1,1) volatility"""
         returns = np.asarray(params.returns)
+        valid_returns = returns[~np.isnan(returns)]
+        if len(valid_returns) < 2:
+            raise ValueError("Need at least 2 returns for GARCH calculation")
+            
         if alpha + beta >= 1:
             raise ValueError("alpha + beta must be less than 1 for stationarity")
             
-        omega = (1 - alpha - beta) * np.var(returns)
-        variance = np.zeros_like(returns)
-        variance[0] = np.var(returns)
+        # Initialize variance array with NaN
+        variance = np.full(len(returns), np.nan)
         
-        for t in range(1, len(returns)):
-            variance[t] = (omega + 
-                         alpha * returns[t-1]**2 + 
-                         beta * variance[t-1])
-            
+        # Find first valid return index
+        first_valid_idx = np.where(~np.isnan(returns))[0][0]
+        
+        # Calculate initial variance using valid returns
+        initial_var = np.var(valid_returns)
+        omega = (1 - alpha - beta) * initial_var
+        
+        variance[first_valid_idx] = initial_var
+        
+        # Calculate GARCH variance
+        for t in range(first_valid_idx + 1, len(returns)):
+            if not np.isnan(returns[t-1]):
+                variance[t] = (omega + 
+                             alpha * returns[t-1]**2 + 
+                             beta * variance[t-1])
+        
+        # Convert to volatility and annualize
         volatility = np.sqrt(variance) * np.sqrt(252)
         return volatility
 
     @staticmethod
     def parkinson_volatility(high: np.ndarray, low: np.ndarray, window: int = 252) -> np.ndarray:
-        """
-        Calculate Parkinson volatility using high-low prices
-        
-        Parameters:
-        -----------
-        high : np.ndarray
-            High prices
-        low : np.ndarray
-            Low prices
-        window : int
-            Rolling window size
-        """
+        """Calculate Parkinson volatility using high-low prices"""
         high = np.asarray(high)
         low = np.asarray(low)
+        
+        # Calculate log high-low ratio
         log_hl = np.log(high / low)
         estimator = 1 / (4 * np.log(2)) * log_hl**2
-        rolling_var = pd.Series(estimator).rolling(window=window, min_periods=2).mean()
-        return np.sqrt(252 * rolling_var.to_numpy())
+        
+        # Use pandas rolling with min_periods to handle initial window
+        rolling_var = pd.Series(estimator).rolling(
+            window=window,
+            min_periods=2
+        ).mean()
+        
+        # Convert to volatility and annualize
+        volatility = np.sqrt(252 * rolling_var.to_numpy())
+        return volatility
 
     @staticmethod
     def garman_klass_volatility(open_: np.ndarray, high: np.ndarray, 
                               low: np.ndarray, close: np.ndarray, 
                               window: int = 252) -> np.ndarray:
-        """
-        Calculate Garman-Klass volatility using OHLC prices
-        
-        Parameters:
-        -----------
-        open_ : np.ndarray
-            Opening prices
-        high : np.ndarray
-            High prices
-        low : np.ndarray
-            Low prices
-        close : np.ndarray
-            Closing prices
-        window : int
-            Rolling window size
-        """
+        """Calculate Garman-Klass volatility using OHLC prices"""
         open_ = np.asarray(open_)
         high = np.asarray(high)
         low = np.asarray(low)
         close = np.asarray(close)
         
+        # Calculate components
         log_hl = np.log(high / low)
         log_co = np.log(close / open_)
         
+        # Calculate estimator
         estimator = 0.5 * log_hl**2 - (2 * np.log(2) - 1) * log_co**2
-        rolling_var = pd.Series(estimator).rolling(window=window, min_periods=2).mean()
-        return np.sqrt(252 * rolling_var.to_numpy())
+        
+        # Use pandas rolling with min_periods to handle initial window
+        rolling_var = pd.Series(estimator).rolling(
+            window=window,
+            min_periods=2
+        ).mean()
+        
+        # Convert to volatility and annualize
+        volatility = np.sqrt(252 * rolling_var.to_numpy())
+        return volatility
 
     @staticmethod
     def yang_zhang_volatility(open_: np.ndarray, high: np.ndarray, 

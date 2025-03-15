@@ -117,7 +117,8 @@ def calculate_volatility_measures(calculator: VolatilityCalculator, hist_data: p
                 valid_indices = ~np.isnan(series)
                 if not np.any(valid_indices):
                     return None
-                return float(series[valid_indices][-1])
+                last_valid_idx = np.where(valid_indices)[0][-1]
+                return float(series[last_valid_idx])
             return None
         
         return (
@@ -261,11 +262,13 @@ def main():
                 fig = go.Figure()
                 
                 # Only add traces for non-None values and series
+                dates = hist_data.index
+                
                 if ewma_series is not None:
                     valid_indices = ~np.isnan(ewma_series)
                     if np.any(valid_indices):
                         fig.add_trace(go.Scatter(
-                            x=hist_data.index[valid_indices],
+                            x=dates[valid_indices],
                             y=ewma_series[valid_indices],
                             name='EWMA'
                         ))
@@ -274,7 +277,7 @@ def main():
                     valid_indices = ~np.isnan(garch_series)
                     if np.any(valid_indices):
                         fig.add_trace(go.Scatter(
-                            x=hist_data.index[valid_indices],
+                            x=dates[valid_indices],
                             y=garch_series[valid_indices],
                             name='GARCH(1,1)'
                         ))
@@ -283,7 +286,7 @@ def main():
                     valid_indices = ~np.isnan(park_series)
                     if np.any(valid_indices):
                         fig.add_trace(go.Scatter(
-                            x=hist_data.index[valid_indices],
+                            x=dates[valid_indices],
                             y=park_series[valid_indices],
                             name='Parkinson'
                         ))
@@ -292,7 +295,7 @@ def main():
                     valid_indices = ~np.isnan(gk_series)
                     if np.any(valid_indices):
                         fig.add_trace(go.Scatter(
-                            x=hist_data.index[valid_indices],
+                            x=dates[valid_indices],
                             y=gk_series[valid_indices],
                             name='Garman-Klass'
                         ))
