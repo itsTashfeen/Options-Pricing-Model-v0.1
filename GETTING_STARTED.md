@@ -17,27 +17,35 @@ Options-Pricing-Model-v0.1/
 │   │   ├── __init__.py
 │   │   └── volatility.py        # Volatility calculation utilities
 │   └── app.py                   # Main Streamlit application
-├── requirements.txt             # Project dependencies
+├── Getting_Started.md             # Project dependencies
 ├── README.md                    # Project documentation
 └── ROADMAP.md                   # Roadmap to stay on track if I ever used LLMs for some help.
 ```
 
 ## Key Components
 
-### 1. Models (src/models/)
+### Models (src/models/)
 - **base_model.py**: Abstract base class defining the interface for pricing models.
 - **black_scholes.py**: Implementation of the BSM
 - **binomial_tree.py**: Implementation of the Binomial pricing model
 
-### 2. Utilities (src/utils/)
+### Utilities (src/utils/)
 - **volatility.py**: Contains various volatility calculation methods:
-  - Historical volatility
-  - EWMA
-  - GARCH
-  - Parkinson volatility
-  - Garman-Klass volatility
+  - Historical Volatility
+  - EWMA (Exponentially Weighted Moving Average)
+  - GARCH(1,1)
+  - Parkinson Volatility
+  - Garman-Klass Volatility
+  - Volatility surface visualization
+  - Term structure analysis
 
-### 3. Main Application (src/app.py)
+### Risk Analytics
+- Real-time Greeks calculation and visualization
+- Sensitivity analysis
+- Model comparison
+- Interactive visualizations
+
+### Main Application (src/app.py)
 - Streamlit web interface
 - Real-time data fetching (please don't break)
 - Interactive option pricing
@@ -79,7 +87,7 @@ ALPHA_VANTAGE_API_KEY = "your_api_key_here"
 streamlit run src/app.py
 ```
 
-## Learning Path to Understand This Project (for anyone interested I also have a lot of notes on my website)
+## Learning path and prereqs (for anyone interested I also have a lot of notes on my website)
 
 ### Understanding the Models
 - Study Black-Scholes model theory
