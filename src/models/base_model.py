@@ -5,14 +5,13 @@ from typing import Dict, Optional, Tuple, List
 
 @dataclass
 class OptionParams:
-    S: float  # Current stock price
-    K: float  # Strike price
-    T: float  # Time to maturity in years
-    r: float  # Risk-free rate
-    sigma: float  # Volatility
-    div_yield: float = 0.0  # Dividend yield
-    is_call: bool = True  # Option type (True for call, False for put)
-
+    S: float
+    K: float
+    T: float
+    r: float
+    sigma: float
+    div_yield: float = 0.0
+    is_call: bool = True
 class BaseOptionModel(ABC):
     """Base class for all option pricing models"""
     
