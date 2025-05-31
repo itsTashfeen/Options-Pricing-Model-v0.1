@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 from dataclasses import dataclass
 from typing import Dict, Optional, Tuple, List
 
@@ -26,16 +24,13 @@ class BaseOptionModel(ABC):
 
     @abstractmethod
     def price(self, params: OptionParams) -> float:
-        """Calculate the option price"""
         pass
 
     @abstractmethod
     def greeks(self, params: OptionParams) -> Dict[str, float]:
-        """Calculate option Greeks"""
         pass
 
     def _validate_params(self, params: OptionParams):
-        """Validate option parameters"""
         if params.S <= 0:
             raise ValueError("Stock price must be positive")
         if params.K <= 0:
@@ -50,7 +45,6 @@ class BaseOptionModel(ABC):
             raise ValueError("Dividend yield cannot be negative")
 
     def _calculate_d1_d2(self, params: OptionParams) -> Tuple[float, float]:
-        """Calculate d1 and d2 for BSM type formulas"""
         d1 = ((np.log(params.S / params.K) + 
                (params.r - params.div_yield + 0.5 * params.sigma ** 2) * params.T) / 
                (params.sigma * np.sqrt(params.T)))
@@ -59,7 +53,6 @@ class BaseOptionModel(ABC):
 
     def implied_volatility(self, market_price: float, params: OptionParams, 
                          tolerance: float = 1e-5, max_iter: int = 100) -> float:
-        """Calculate IV using Newton-Raphson method"""
         sigma = 0.5
         for i in range(max_iter):
             params.sigma = sigma
@@ -83,7 +76,6 @@ class BaseOptionModel(ABC):
     def _finite_difference_greeks(self, params: OptionParams, 
                                 delta_S: float = 0.01, 
                                 delta_t: float = 1/365) -> Dict[str, float]:
-        """Calculate Greeks using finite difference method"""
         original_price = self.price(params)
         
         # Delta
