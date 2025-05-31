@@ -3,25 +3,13 @@ from typing import Dict, List, Tuple
 from .base_model import BaseOptionModel, OptionParams
 
 class BinomialTreeModel(BaseOptionModel):
-    """Binomial Tree option pricing model with support for both European and American options"""
-    
+
     def __init__(self, steps: int = 100, american: bool = False):
-        """
-        Initialize Binomial Tree model
-        
-        Parameters:
-        -----------
-        steps : int
-            Number of time steps in the tree
-        american : bool
-            Whether to price American options (True) or European options (False)
-        """
         super().__init__("Binomial Tree")
         self.steps = steps
         self.american = american
 
     def _build_tree(self, params: OptionParams) -> Tuple[np.ndarray, float, float, float]:
-        """Build the binomial price tree"""
         dt = params.T / self.steps
         u = np.exp(params.sigma * np.sqrt(dt))
         d = 1 / u
@@ -40,19 +28,7 @@ class BinomialTreeModel(BaseOptionModel):
         return stock_tree, p, u, d
 
     def price(self, params: OptionParams) -> float:
-        """
-        Calculate option price using the binomial tree method
-        
-        Parameters:
-        -----------
-        params : OptionParams
-            Option parameters
-            
-        Returns:
-        --------
-        float
-            Option price
-        """
+
         self._validate_params(params)
         
         # Build the tree
@@ -89,52 +65,14 @@ class BinomialTreeModel(BaseOptionModel):
         return option_tree[0, 0]
 
     def greeks(self, params: OptionParams) -> Dict[str, float]:
-        """
-        Calculate option Greeks using finite differences
-        
-        Parameters:
-        -----------
-        params : OptionParams
-            Option parameters
-            
-        Returns:
-        --------
-        Dict[str, float]
-            Dictionary containing delta, gamma, theta, vega, and rho
-        """
         return self._finite_difference_greeks(params)
 
     def get_price_tree(self, params: OptionParams) -> np.ndarray:
-        """
-        Get the full price tree for analysis
-        
-        Parameters:
-        -----------
-        params : OptionParams
-            Option parameters
-            
-        Returns:
-        --------
-        np.ndarray
-            2D array containing the option prices at each node
-        """
         self._validate_params(params)
         return self._build_tree(params)[0]
 
     def get_early_exercise_boundary(self, params: OptionParams) -> List[float]:
-        """
-        Calculate the early exercise boundary for American options
-        
-        Parameters:
-        -----------
-        params : OptionParams
-            Option parameters
-            
-        Returns:
-        --------
-        List[float]
-            Early exercise prices at each time step
-        """
+
         if not self.american:
             raise ValueError("Early exercise boundary only available for American options")
         
