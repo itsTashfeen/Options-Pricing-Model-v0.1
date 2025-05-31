@@ -44,11 +44,6 @@ Options-Pricing-Model-v0.1/
 - Volatility analysis
 - Greeks visualization
 
-## Prerequisites
-1. Python 3.8 or higher
-2. pip (pain in the head)
-3. Git
-
 ## Setup Instructions
 
 1. **Clone the Repository**
