@@ -4,25 +4,12 @@ from .base_model import BaseOptionModel, OptionParams
 from typing import Dict
 
 class BlackScholesModel(BaseOptionModel):
-    """Black-Scholes option pricing model"""
     
     def __init__(self):
         super().__init__("Black-Scholes")
 
     def price(self, params: OptionParams) -> float:
-        """
-        Calculate option price using Black-Scholes formula
-        
-        Parameters:
-        -----------
-        params : OptionParams
-            Option parameters including S, K, T, r, sigma, div_yield, and is_call
-            
-        Returns:
-        --------
-        float
-            Option price
-        """
+
         self._validate_params(params)
         
         d1, d2 = self._calculate_d1_d2(params)
@@ -37,19 +24,7 @@ class BlackScholesModel(BaseOptionModel):
         return price
 
     def greeks(self, params: OptionParams) -> Dict[str, float]:
-        """
-        Calculate option Greeks analytically
-        
-        Parameters:
-        -----------
-        params : OptionParams
-            Option parameters
-            
-        Returns:
-        --------
-        Dict[str, float]
-            Dictionary containing delta, gamma, theta, vega, and rho
-        """
+
         self._validate_params(params)
         
         d1, d2 = self._calculate_d1_d2(params)

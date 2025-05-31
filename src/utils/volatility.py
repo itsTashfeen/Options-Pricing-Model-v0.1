@@ -12,11 +12,9 @@ class VolatilityParams:
     decay: float = 0.94  # Default EWMA decay factor
 
 class VolatilityCalculator:
-    """Class for calculating various measures of volatility"""
-    
+
     @staticmethod
     def calculate_returns(prices: np.ndarray, log_returns: bool = True) -> np.ndarray:
-        """Calculate returns from price series"""
         prices = np.asarray(prices)
         # Initialize returns array with NaN
         returns = np.full(len(prices), np.nan)
@@ -29,37 +27,30 @@ class VolatilityCalculator:
 
     @staticmethod
     def historical_volatility(params: VolatilityParams) -> float:
-        """Calculate historical volatility"""
         returns = np.asarray(params.returns)
         valid_returns = returns[~np.isnan(returns)]
         if len(valid_returns) < 2:
             raise ValueError("Need at least 2 returns to calculate volatility")
             
-        # Annualization factor (sqrt of trading days)
         annualization = np.sqrt(252)
         return float(np.std(valid_returns, ddof=1) * annualization)
 
     @staticmethod
     def ewma_volatility(params: VolatilityParams) -> np.ndarray:
-        """Calculate EWMA (Exponentially Weighted Moving Average) volatility"""
         returns = np.asarray(params.returns)
         valid_returns = returns[~np.isnan(returns)]
         if len(valid_returns) < 2:
             raise ValueError("Need at least 2 returns for EWMA calculation")
             
-        # Initialize variance array with NaN
         variance = np.full(len(returns), np.nan)
-        
-        # Find first valid return index
+
         first_valid_idx = np.where(~np.isnan(returns))[0][0]
         variance[first_valid_idx] = returns[first_valid_idx] ** 2
         
-        # Calculate EWMA variance
         for t in range(first_valid_idx + 1, len(returns)):
             if not np.isnan(returns[t-1]):
                 variance[t] = params.decay * variance[t-1] + (1 - params.decay) * returns[t-1] ** 2
             
-        # Convert to volatility and annualize
         volatility = np.sqrt(variance) * np.sqrt(252)
         return volatility
 
