@@ -56,7 +56,6 @@ class VolatilityCalculator:
 
     @staticmethod
     def garch_volatility(params: VolatilityParams, alpha: float = 0.1, beta: float = 0.8) -> np.ndarray:
-        """Calculate GARCH(1,1) volatility"""
         returns = np.asarray(params.returns)
         valid_returns = returns[~np.isnan(returns)]
         if len(valid_returns) < 2:
@@ -65,26 +64,21 @@ class VolatilityCalculator:
         if alpha + beta >= 1:
             raise ValueError("alpha + beta must be less than 1 for stationarity")
             
-        # Initialize variance array with NaN
         variance = np.full(len(returns), np.nan)
         
-        # Find first valid return index
         first_valid_idx = np.where(~np.isnan(returns))[0][0]
         
-        # Calculate initial variance using valid returns
         initial_var = np.var(valid_returns)
         omega = (1 - alpha - beta) * initial_var
         
         variance[first_valid_idx] = initial_var
         
-        # Calculate GARCH variance
         for t in range(first_valid_idx + 1, len(returns)):
             if not np.isnan(returns[t-1]):
                 variance[t] = (omega + 
                              alpha * returns[t-1]**2 + 
                              beta * variance[t-1])
         
-        # Convert to volatility and annualize
         volatility = np.sqrt(variance) * np.sqrt(252)
         return volatility
 
@@ -94,17 +88,14 @@ class VolatilityCalculator:
         high = np.asarray(high)
         low = np.asarray(low)
         
-        # Calculate log high-low ratio
         log_hl = np.log(high / low)
         estimator = 1 / (4 * np.log(2)) * log_hl**2
         
-        # Use pandas rolling with min_periods to handle initial window
         rolling_var = pd.Series(estimator).rolling(
             window=window,
             min_periods=2
         ).mean()
         
-        # Convert to volatility and annualize
         volatility = np.sqrt(252 * rolling_var.to_numpy())
         return volatility
 
@@ -112,26 +103,21 @@ class VolatilityCalculator:
     def garman_klass_volatility(open_: np.ndarray, high: np.ndarray, 
                               low: np.ndarray, close: np.ndarray, 
                               window: int = 252) -> np.ndarray:
-        """Calculate Garman-Klass volatility using OHLC prices"""
         open_ = np.asarray(open_)
         high = np.asarray(high)
         low = np.asarray(low)
         close = np.asarray(close)
         
-        # Calculate components
         log_hl = np.log(high / low)
         log_co = np.log(close / open_)
         
-        # Calculate estimator
         estimator = 0.5 * log_hl**2 - (2 * np.log(2) - 1) * log_co**2
         
-        # Use pandas rolling with min_periods to handle initial window
         rolling_var = pd.Series(estimator).rolling(
             window=window,
             min_periods=2
         ).mean()
-        
-        # Convert to volatility and annualize
+
         volatility = np.sqrt(252 * rolling_var.to_numpy())
         return volatility
 
@@ -139,22 +125,7 @@ class VolatilityCalculator:
     def yang_zhang_volatility(open_: np.ndarray, high: np.ndarray, 
                             low: np.ndarray, close: np.ndarray, 
                             window: int = 252) -> np.ndarray:
-        """
-        Calculate Yang-Zhang volatility using OHLC prices
-        
-        Parameters:
-        -----------
-        open_ : np.ndarray
-            Opening prices
-        high : np.ndarray
-            High prices
-        low : np.ndarray
-            Low prices
-        close : np.ndarray
-            Closing prices
-        window : int
-            Rolling window size
-        """
+
         log_ho = np.log(high / open_)
         log_lo = np.log(low / open_)
         log_co = np.log(close / open_)
@@ -174,26 +145,10 @@ class VolatilityCalculator:
         return np.sqrt(252 * sigma_sq)
 
 class ImpliedVolatilitySurface:
-    """Class for constructing and analyzing implied volatility surfaces"""
-    
+
     def __init__(self, strikes: np.ndarray, maturities: np.ndarray, 
                  spot: float, rates: np.ndarray, market_prices: np.ndarray):
-        """
-        Initialize implied volatility surface
-        
-        Parameters:
-        -----------
-        strikes : np.ndarray
-            Array of strike prices
-        maturities : np.ndarray
-            Array of maturities
-        spot : float
-            Current spot price
-        rates : np.ndarray
-            Risk-free rates for each maturity
-        market_prices : np.ndarray
-            2D array of market option prices (strikes × maturities)
-        """
+
         self.strikes = strikes
         self.maturities = maturities
         self.spot = spot
@@ -204,7 +159,6 @@ class ImpliedVolatilitySurface:
     def _newton_raphson_iv(self, market_price: float, K: float, T: float, 
                           r: float, is_call: bool = True, 
                           max_iter: int = 100, tolerance: float = 1e-5) -> float:
-        """Calculate implied volatility using Newton-Raphson method"""
         sigma = 0.5  # Initial guess
         
         for _ in range(max_iter):
@@ -242,23 +196,19 @@ class ImpliedVolatilitySurface:
         return self.iv_surface
     
     def get_smile(self, maturity_idx: int) -> Tuple[np.ndarray, np.ndarray]:
-        """Get the volatility smile for a specific maturity"""
         if self.iv_surface is None:
             self.calculate_surface()
         return self.strikes, self.iv_surface[:, maturity_idx]
     
     def get_term_structure(self, strike_idx: int) -> Tuple[np.ndarray, np.ndarray]:
-        """Get the term structure for a specific strike"""
         if self.iv_surface is None:
             self.calculate_surface()
         return self.maturities, self.iv_surface[strike_idx, :]
     
     def interpolate(self, strike: float, maturity: float) -> float:
-        """Interpolate the implied volatility for any strike and maturity"""
         if self.iv_surface is None:
             self.calculate_surface()
             
-        # Simple bilinear interpolation
         i = np.searchsorted(self.strikes, strike)
         j = np.searchsorted(self.maturities, maturity)
         
