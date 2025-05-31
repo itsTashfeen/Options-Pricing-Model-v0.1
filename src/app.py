@@ -12,7 +12,7 @@ from models.base_model import OptionParams
 from utils.volatility import VolatilityCalculator, VolatilityParams, ImpliedVolatilitySurface
 
 # Alpha Vantage API configuration
-ALPHA_VANTAGE_API_KEY = st.secrets["ALPHA_VANTAGE_API_KEY"] if "ALPHA_VANTAGE_API_KEY" in st.secrets else ""
+ALPHA_VANTAGE_API_KEY = st.secrets["7X9IJ5ZAHLT2MPWJ"] if "ALPHA_VANTAGE_API_KEY" in st.secrets else ""
 
 class OptionsCalculator:
     def __init__(self):
