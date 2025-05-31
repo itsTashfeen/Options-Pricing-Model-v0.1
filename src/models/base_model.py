@@ -15,7 +15,6 @@ class OptionParams:
     div_yield: float = 0.0
     is_call: bool = True
 class BaseOptionModel(ABC):
-    """Base class for all option pricing models"""
     
     def __init__(self, name: str):
         self.name = name
@@ -51,7 +50,7 @@ class BaseOptionModel(ABC):
             raise ValueError("Dividend yield cannot be negative")
 
     def _calculate_d1_d2(self, params: OptionParams) -> Tuple[float, float]:
-        """Calculate d1 and d2 for Black-Scholes type formulas"""
+        """Calculate d1 and d2 for BSM type formulas"""
         d1 = ((np.log(params.S / params.K) + 
                (params.r - params.div_yield + 0.5 * params.sigma ** 2) * params.T) / 
                (params.sigma * np.sqrt(params.T)))
@@ -60,8 +59,8 @@ class BaseOptionModel(ABC):
 
     def implied_volatility(self, market_price: float, params: OptionParams, 
                          tolerance: float = 1e-5, max_iter: int = 100) -> float:
-        """Calculate implied volatility using Newton-Raphson method"""
-        sigma = 0.5  # Initial guess
+        """Calculate IV using Newton-Raphson method"""
+        sigma = 0.5
         for i in range(max_iter):
             params.sigma = sigma
             price = self.price(params)
@@ -71,12 +70,12 @@ class BaseOptionModel(ABC):
                 return sigma
                 
             vega = self.greeks(params)['vega']
-            if abs(vega) < 1e-10:  # Avoid division by zero
+            if abs(vega) < 1e-10:
                 raise ValueError("Vega too close to zero, cannot compute implied volatility")
                 
             sigma = sigma - diff / vega
             
-            if sigma <= 0:  # Ensure volatility stays positive
+            if sigma <= 0:
                 sigma = 0.0001
                 
         raise ValueError(f"Implied volatility did not converge after {max_iter} iterations")
