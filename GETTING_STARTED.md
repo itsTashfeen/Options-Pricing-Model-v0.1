@@ -33,7 +33,7 @@ Options-Pricing-Model-v0.1/
 - **volatility.py**: Contains various volatility calculation methods:
   - Historical Volatility
   - EWMA (Exponentially Weighted Moving Average)
-  - GARCH(1,1)
+  - GARCH(1, 1)
   - Parkinson Volatility
   - Garman-Klass Volatility
   - Volatility surface visualization
