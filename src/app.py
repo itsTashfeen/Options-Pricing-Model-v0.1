@@ -3,16 +3,13 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import requests
+import yfinance as yf
 from datetime import datetime, timedelta
 
 from models.black_scholes import BlackScholesModel
 from models.binomial_tree import BinomialTreeModel
 from models.base_model import OptionParams
 from utils.volatility import VolatilityCalculator, VolatilityParams, ImpliedVolatilitySurface
-
-# Alpha Vantage API configuration
-ALPHA_VANTAGE_API_KEY = st.secrets[7X9IJ5ZAHLT2MPWJ] if "ALPHA_VANTAGE_API_KEY" in st.secrets else ""
 
 class OptionsCalculator:
     def __init__(self):
@@ -32,47 +29,20 @@ class OptionsCalculator:
 
 def fetch_stock_data(ticker: str, days: int = 252) -> tuple:
     """
-    Fetch stock data using Alpha Vantage API
+    Fetch stock data using yfinance
     Returns: (current_price, historical_data)
     """
-    if not ALPHA_VANTAGE_API_KEY:
-        st.error("Alpha Vantage API key is missing. Please set it in your Streamlit secrets.")
-        st.info("You can get a free API key from: https://www.alphavantage.co/support/#api-key")
-        raise ValueError("Alpha Vantage API key is required")
-
     try:
-        # Fetch daily data
-        url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={ticker}&outputsize=full&apikey={ALPHA_VANTAGE_API_KEY}"
-        response = requests.get(url)
-        data = response.json()
-
-        if "Error Message" in data:
-            raise ValueError(f"Error from Alpha Vantage: {data['Error Message']}")
-        
-        if "Time Series (Daily)" not in data:
-            raise ValueError(f"No data available for {ticker}")
-
-        # Convert to DataFrame
-        hist_data = pd.DataFrame.from_dict(data["Time Series (Daily)"], orient='index')
-        hist_data.index = pd.to_datetime(hist_data.index)
-        hist_data = hist_data.sort_index()
-        
-        # Rename columns
-        hist_data.columns = ['Open', 'High', 'Low', 'Close', 'Volume']
-        hist_data = hist_data.astype(float)
-        
-        # Get only the required number of days
-        start_date = datetime.now() - timedelta(days=days)
-        hist_data = hist_data[hist_data.index >= start_date]
+        # Fetch data using yfinance
+        stock = yf.Ticker(ticker)
+        hist_data = stock.history(period=f"{days}d")
         
         if hist_data.empty:
-            raise ValueError(f"No recent data available for {ticker}")
+            raise ValueError(f"No data available for {ticker}")
         
         current_price = float(hist_data['Close'].iloc[-1])
         return current_price, hist_data
 
-    except requests.exceptions.RequestException as e:
-        raise ValueError(f"Network error while fetching data: {str(e)}")
     except Exception as e:
         raise ValueError(f"Error fetching data for {ticker}: {str(e)}")
 
