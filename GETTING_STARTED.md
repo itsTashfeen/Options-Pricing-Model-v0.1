@@ -11,12 +11,13 @@ Options-Pricing-Model-v0.1/
 │   ├── models/
 │   │   ├── __init__.py
 │   │   ├── base_model.py        # Base class for option pricing models
-│   │   ├── black_scholes.py     # Black-Scholes model implementation
-│   │   └── binomial_tree.py     # Binomial tree model implementation
+│   │   ├── black_scholes.py     # BSM implementation
+│   │   └── binomial_tree.py     # Binomial implementation
 │   ├── utils/
 │   │   ├── __init__.py
 │   │   └── volatility.py        # Volatility calculation utilities
 │   └── app.py                   # Main Streamlit application
+│
 ├── Getting_Started.md             # Project dependencies
 ├── README.md                    # Project documentation
 └── ROADMAP.md                   # Roadmap to stay on track if I ever used LLMs for some help.
@@ -26,17 +27,17 @@ Options-Pricing-Model-v0.1/
 
 ### Models (src/models/)
 - **base_model.py**: Abstract base class defining the interface for pricing models.
-- **black_scholes.py**: Implementation of the BSM
-- **binomial_tree.py**: Implementation of the Binomial pricing model
+- **black_scholes.py**: Implementation of the BSM.
+- **binomial_tree.py**: Implementation of the Binomial model.
 
 ### Utilities (src/utils/)
 - **volatility.py**: Contains various volatility calculation methods:
   - Historical Volatility
-  - EWMA (Exponentially Weighted Moving Average)
+  - EWMA
   - GARCH(1, 1)
   - Parkinson Volatility
   - Garman-Klass Volatility
-  - Volatility surface visualization
+  - Volatility surface visualization (had to pull because there was an error with the code)
   - Term structure analysis
 
 ### Risk Analytics
@@ -76,27 +77,25 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-4. **Set Up API Keys**
-Create a `.streamlit/secrets.toml` file:
-```toml
-ALPHA_VANTAGE_API_KEY = "your_api_key_here"
-```
+~~4. **Set Up API Keys**~~
+I'm using yfinance now.
+
 
 5. **Run the Application**
 ```bash
 streamlit run src/app.py
 ```
 
-## Learning path and prereqs (for anyone interested I also have a lot of notes on my website)
+## Learning path and prereqs (for anyone interested I also have a lot of notes on my blog)
 
 ### Understanding the Models
-- Study Black-Scholes model theory
-- Understand Binomial Tree model
+- Learn the BSM, theory and implementation
+- Understand the Binomial Tree model
 - Review the code implementation
 - Practice with simple calculations
 
 ### Volatility and Utils
-- Learn about different volatility measures
+- Learn about the different volatility measures used
 - Understand time series analysis
 - Study the volatility calculator implementation
 - Practice with real market data

@@ -78,27 +78,22 @@ class BaseOptionModel(ABC):
                                 delta_t: float = 1/365) -> Dict[str, float]:
         original_price = self.price(params)
         
-        # Delta
         params_up = OptionParams(**params.__dict__)
         params_up.S += delta_S
         params_down = OptionParams(**params.__dict__)
         params_down.S -= delta_S
         delta = (self.price(params_up) - self.price(params_down)) / (2 * delta_S)
         
-        # Gamma
         gamma = (self.price(params_up) - 2 * original_price + self.price(params_down)) / (delta_S ** 2)
         
-        # Theta
         params_t = OptionParams(**params.__dict__)
         params_t.T -= delta_t
         theta = -(self.price(params_t) - original_price) / delta_t
         
-        # Vega
         params_vol_up = OptionParams(**params.__dict__)
         params_vol_up.sigma += 0.01
         vega = (self.price(params_vol_up) - original_price) / 0.01
         
-        # Rho
         params_r_up = OptionParams(**params.__dict__)
         params_r_up.r += 0.01
         rho = (self.price(params_r_up) - original_price) / 0.01
