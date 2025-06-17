@@ -31,16 +31,22 @@ class BaseOptionModel(ABC):
         pass
 
     def _validate_params(self, params: OptionParams):
+        
         if params.S <= 0:
             raise ValueError("Stock price must be positive")
+        
         if params.K <= 0:
             raise ValueError("Strike price must be positive")
+        
         if params.T <= 0:
             raise ValueError("Time to maturity must be positive")
+        
         if params.sigma <= 0:
             raise ValueError("Volatility must be positive")
+        
         if params.r < 0:
             raise ValueError("Risk-free rate cannot be negative")
+        
         if params.div_yield < 0:
             raise ValueError("Dividend yield cannot be negative")
 

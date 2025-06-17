@@ -16,6 +16,7 @@ class BinomialTreeModel(BaseOptionModel):
         p = (np.exp((params.r - params.div_yield) * dt) - d) / (u - d)
         stock_tree = np.zeros((self.steps + 1, self.steps + 1))
         stock_tree[0, 0] = params.S
+        
         for i in range(1, self.steps + 1):
             for j in range(i+1):
                 stock_tree[j, i] = params.S * (u ** (i-j)) * (d ** j)
@@ -25,12 +26,15 @@ class BinomialTreeModel(BaseOptionModel):
         self._validate_params(params)
         stock_tree, p, u, d = self._build_tree(params)
         option_tree = np.zeros((self.steps + 1, self.steps + 1))
+        
         if params.is_call:
             option_tree[:, self.steps] = np.maximum(0, stock_tree[:, self.steps] - params.K)
+       
         else:
             option_tree[:, self.steps] = np.maximum(0, params.K - stock_tree[:, self.steps])
         dt = params.T / self.steps
         df = np.exp(-params.r * dt)
+        
         for j in range(self.steps - 1, -1, -1):
             for i in range(j + 1):
                 hold_value = df * (p * option_tree[i, j + 1] + (1 - p) * option_tree[i + 1, j + 1])
@@ -52,15 +56,19 @@ class BinomialTreeModel(BaseOptionModel):
         return self._build_tree(params)[0]
 
     def get_early_exercise_boundary(self, params: OptionParams) -> List[float]:
+        
         if not self.american:
             raise ValueError("Early exercise boundary only available for American options")
         stock_tree, _, _, _ = self._build_tree(params)
         option_tree = np.zeros_like(stock_tree)
+        
         if params.is_call:
             option_tree[:, self.steps] = np.maximum(0, stock_tree[:, self.steps] - params.K)
+        
         else:
             option_tree[:, self.steps] = np.maximum(0, params.K - stock_tree[:, self.steps])
         boundary = []
+        
         for j in range(self.steps + 1):
             exercise_points = []
             for i in range(j + 1):
@@ -77,4 +85,5 @@ class BinomialTreeModel(BaseOptionModel):
                     boundary.append(max(exercise_points))
             else:
                 boundary.append(np.nan)
+        
         return boundary 

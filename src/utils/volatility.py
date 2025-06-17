@@ -36,11 +36,14 @@ class VolatilityCalculator:
     def ewma_volatility(params: VolatilityParams) -> np.ndarray:
         returns = np.asarray(params.returns)
         valid_returns = returns[~np.isnan(returns)]
+        
         if len(valid_returns) < 2:
             raise ValueError("Need at least 2 returns for EWMA calculation")
+        
         variance = np.full(len(returns), np.nan)
         first_valid_idx = np.where(~np.isnan(returns))[0][0]
         variance[first_valid_idx] = returns[first_valid_idx] ** 2
+        
         for t in range(first_valid_idx + 1, len(returns)):
             if not np.isnan(returns[t-1]):
                 variance[t] = params.decay * variance[t-1] + (1 - params.decay) * returns[t-1] ** 2
@@ -51,10 +54,13 @@ class VolatilityCalculator:
     def garch_volatility(params: VolatilityParams, alpha: float = 0.1, beta: float = 0.8) -> np.ndarray:
         returns = np.asarray(params.returns)
         valid_returns = returns[~np.isnan(returns)]
+        
         if len(valid_returns) < 2:
             raise ValueError("Need at least 2 returns for GARCH calculation")
+        
         if alpha + beta >= 1:
             raise ValueError("alpha + beta must be less than 1 for stationarity")
+        
         variance = np.full(len(returns), np.nan)
         first_valid_idx = np.where(~np.isnan(returns))[0][0]
         initial_var = np.var(valid_returns)
