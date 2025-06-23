@@ -21,19 +21,13 @@ class OptionsCalculator:
         self.vol_calculator = VolatilityCalculator()
         
     def calculate_all_greeks(self, params: OptionParams, model_name: str) -> dict:
-        """Calculate option price and Greeks using specified model"""
         model = self.models[model_name]
         price = model.price(params)
         greeks = model.greeks(params)
         return {'price': price, **greeks}
 
 def fetch_stock_data(ticker: str, days: int = 252) -> tuple:
-    """
-    Fetch stock data using yfinance
-    Returns: (current_price, historical_data)
-    """
     try:
-        # Fetch data using yfinance
         stock = yf.Ticker(ticker)
         hist_data = stock.history(period=f"{days}d")
         
@@ -47,24 +41,19 @@ def fetch_stock_data(ticker: str, days: int = 252) -> tuple:
         raise ValueError(f"Error fetching data for {ticker}: {str(e)}")
 
 def calculate_volatility_measures(calculator: VolatilityCalculator, hist_data: pd.DataFrame, window: int) -> tuple:
-    """Calculate various volatility measures with error handling"""
     try:
-        # Ensure we have enough data
         if len(hist_data) < window:
             raise ValueError(f"Need at least {window} days of data for volatility calculations")
         
-        # Calculate returns and create parameters
         returns = calculator.calculate_returns(hist_data['Close'].values)
         vol_params = VolatilityParams(
             returns=returns,
             prices=hist_data['Close'].values,
             window=window
         )
-        
-        # Calculate historical volatility (scalar)
+
         hist_vol = calculator.historical_volatility(vol_params)
-        
-        # Calculate time series volatilities
+
         ewma_series = calculator.ewma_volatility(vol_params)
         garch_series = calculator.garch_volatility(vol_params)
         park_series = calculator.parkinson_volatility(
@@ -80,10 +69,8 @@ def calculate_volatility_measures(calculator: VolatilityCalculator, hist_data: p
             window=window
         )
         
-        # Get the most recent values for the summary table
         def get_last_valid(series):
             if isinstance(series, np.ndarray):
-                # Remove any NaN values from the end
                 valid_indices = ~np.isnan(series)
                 if not np.any(valid_indices):
                     return None
@@ -112,14 +99,11 @@ def main():
     and sophisticated volatility calculations.
     """)
     
-    # Initialize calculator
     calculator = OptionsCalculator()
     
-    # Sidebar inputs
     with st.sidebar:
         st.header("Option Parameters")
         
-        # Stock information
         ticker = st.text_input("Stock Ticker", "AAPL")
         
         try:
@@ -130,18 +114,15 @@ def main():
             current_price = 100.0  # Default value
             hist_data = None
         
-        # Basic parameters
         strike = st.number_input("Strike Price", min_value=0.01, value=float(current_price))
         days = st.slider("Days to Expiry", min_value=1, max_value=365, value=30)
         volatility = st.slider("Volatility (%)", min_value=1, max_value=100, value=30) / 100
         risk_free = st.slider("Risk-free Rate (%)", min_value=0, max_value=10, value=2) / 100
         dividend = st.slider("Dividend Yield (%)", min_value=0, max_value=10, value=0) / 100
         
-        # Model selection
         model_name = st.selectbox("Pricing Model", list(calculator.models.keys()))
         option_type = st.selectbox("Option Type", ["call", "put"])
         
-        # Advanced settings
         with st.expander("Advanced Settings"):
             if "Binomial" in model_name:
                 steps = st.slider("Tree Steps", min_value=10, max_value=1000, value=100)
@@ -149,10 +130,8 @@ def main():
             
             vol_window = st.slider("Volatility Window (days)", min_value=5, max_value=252, value=30)
     
-    # Create tabs for different analyses
     tab1, tab2, tab3 = st.tabs(["Option Pricing", "Volatility Analysis", "Greeks Analysis"])
-    
-    # Option parameters
+
     params = OptionParams(
         S=current_price,
         K=strike,
@@ -163,15 +142,12 @@ def main():
         is_call=(option_type == "call")
     )
     
-    # Tab 1: Option Pricing
     with tab1:
         st.header("Option Pricing Results")
         
         try:
-            # Calculate results
             results = calculator.calculate_all_greeks(params, model_name)
             
-            # Display results in columns
             col1, col2, col3 = st.columns(3)
             with col1:
                 st.metric("Option Price", f"${results['price']:.2f}")
@@ -188,7 +164,6 @@ def main():
             with col6:
                 st.metric("Rho", f"{results['rho']:.4f}")
             
-            # Model comparison
             st.subheader("Model Comparison")
             comparison_df = pd.DataFrame(columns=['Model', 'Price', 'Delta', 'Gamma', 'Theta', 'Vega', 'Rho'])
             
@@ -215,23 +190,19 @@ def main():
         except Exception as e:
             st.error(f"Error calculating option prices: {str(e)}")
     
-    # Tab 2: Volatility Analysis
     with tab2:
         st.header("Volatility Analysis")
         
         if hist_data is not None and len(hist_data) >= 2:
             try:
-                # Calculate volatility measures
                 current_vols, vol_series = calculate_volatility_measures(
                     calculator.vol_calculator, hist_data, vol_window
                 )
                 hist_vol, ewma_vol, garch_vol, park_vol, gk_vol = current_vols
                 ewma_series, garch_series, park_series, gk_series = vol_series
                 
-                # Create volatility comparison plot
                 fig = go.Figure()
                 
-                # Only add traces for non-None values and series
                 dates = hist_data.index
                 
                 if ewma_series is not None:
@@ -279,7 +250,6 @@ def main():
                 
                 st.plotly_chart(fig, use_container_width=True)
                 
-                # Display current volatility measures
                 st.subheader("Current Volatility Measures")
                 measures = []
                 values = []
@@ -317,15 +287,12 @@ def main():
         else:
             st.warning(f"Insufficient historical data available for {ticker} to calculate volatility measures. Please try a different ticker or ensure market data is available.")
     
-    # Tab 3: Greeks Analysis
     with tab3:
         st.header("Greeks Analysis")
         
         try:
-            # Create price range for analysis
             price_range = np.linspace(current_price * 0.5, current_price * 1.5, 100)
             
-            # Calculate Greeks across price range
             results = {
                 'price': [], 'delta': [], 'gamma': [], 'theta': [], 'vega': [], 'rho': []
             }
@@ -336,11 +303,9 @@ def main():
                 for key in results:
                     results[key].append(calcs[key] if key != 'price' else calcs['price'])
             
-            # Create subplots for Greeks
             fig = make_subplots(rows=3, cols=2,
                               subplot_titles=('Price', 'Delta', 'Gamma', 'Theta', 'Vega', 'Rho'))
             
-            # Add traces
             fig.add_trace(go.Scatter(x=price_range, y=results['price'], name='Price'),
                          row=1, col=1)
             fig.add_trace(go.Scatter(x=price_range, y=results['delta'], name='Delta'),
@@ -357,7 +322,6 @@ def main():
             fig.update_layout(height=800, title_text=f"Greeks Analysis ({model_name})")
             st.plotly_chart(fig, use_container_width=True)
             
-            # Add educational content
             with st.expander("Understanding the Greeks"):
                 st.markdown("""
                 ### Key Options Greeks Explained
