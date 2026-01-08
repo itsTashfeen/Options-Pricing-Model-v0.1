@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple, List
+from typing import Dict, Optional, Tuple, List, ClassVar
 
 @dataclass
 class OptionParams:
